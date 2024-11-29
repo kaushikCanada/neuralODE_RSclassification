@@ -7,7 +7,6 @@
 # SBATCH --account=def-sh1352
 # SBATCH --time=0-10:00:00
 # SBATCH --mail-type=BEGIN,FAIL,END
-# SBATCH --mail-user=kaushik.roy@inrs.ca
 # SBATCH --output=node%N-%j.out
 
 module load python/3.11 libspatialindex
