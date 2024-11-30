@@ -24,17 +24,19 @@ import torch.utils.data as data
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 import torchdiffeq
-from torchdiffeq import odeint
+# from torchdiffeq import odeint
+from torchdiffeq import odeint_adjoint as odeint
 import rich
 from torchmetrics.classification import Accuracy
+from model_utils import models,conv_models
 
-pl.seed_everything(42)
+# pl.seed_everything(42)
 
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Device: {device}")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# print(f"Device: {device}")
 
 parser = argparse.ArgumentParser(description='Worldview 3')
 parser.add_argument('--lr', default=0.001, help='Learning Rate')
@@ -70,7 +72,7 @@ class ODEBlock(nn.Module):
 
     def forward(self, y0):
         t = torch.tensor([0, 1]).float().to(y0.device)
-        return odeint(self.odefunc, y0, t)[-1]
+        return odeint(self.odefunc, y0, t,method='dopri5')[-1]
 
 # ----------------------------
 # Define the Full Model
@@ -78,23 +80,39 @@ class ODEBlock(nn.Module):
 class CIFAR10NeuralODE(pl.LightningModule):
     def __init__(self, num_classes=10):
         super(CIFAR10NeuralODE, self).__init__()
-        self.feature_extractor = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1),
-            nn.ReLU()
-        )
-        self.ode_block = ODEBlock(ODEFunc())
-        self.classifier = nn.Sequential(
-            nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Flatten(),
-            nn.Linear(64, num_classes)
-        )
+        # self.feature_extractor = nn.Sequential(
+        #     nn.Conv2d(3, 64, kernel_size=3, padding=1),
+        #     nn.ReLU(),
+        #     nn.Conv2d(64, 64, kernel_size=3, padding=1),
+        #     nn.ReLU()
+        # )
+        # self.ode_block = ODEBlock(ODEFunc())
+        # self.classifier = nn.Sequential(
+        #     nn.AdaptiveAvgPool2d((1, 1)),
+        #     nn.Flatten(),
+        #     nn.Linear(64, num_classes)
+        # )
+        img_size = (3, 32, 32)
+        output_dim = 10
+        num_filters = 64
+        augment_dim = True
+        time_dependent = True
+        non_linearity = 'relu'
+        device = None
+
+
+        self.model = conv_models.ConvODENet(device, img_size, num_filters,
+                                output_dim=output_dim,
+                                augment_dim=augment_dim,
+                                time_dependent=time_dependent,
+                                non_linearity=non_linearity,
+                                adjoint=True)
 
     def forward(self, x):
-        features = self.feature_extractor(x)
-        features = self.ode_block(features)
-        return self.classifier(features)
+        # features = self.feature_extractor(x)
+        # features = self.ode_block(features)
+        # return self.classifier(features)
+        return self.model(x,return_features = False)
 
     def training_step(self, batch, batch_idx):
         inputs, labels = batch
@@ -127,8 +145,8 @@ def prepare_data():
     train_dataset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
     val_dataset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
 
-    train_loader = DataLoader(train_dataset, batch_size=8, shuffle=True, num_workers=2)
-    val_loader = DataLoader(val_dataset, batch_size=8, shuffle=False, num_workers=2)
+    train_loader = DataLoader(train_dataset, batch_size=256, shuffle=True, num_workers=2)
+    val_loader = DataLoader(val_dataset, batch_size=256, shuffle=False, num_workers=2)
 
     return train_loader, val_loader
 
@@ -183,12 +201,33 @@ def main():
             # Instantiate the model
             model = CIFAR10NeuralODE()
 
+            img_size = (3, 32, 32)
+            output_dim = 10
+            num_filters = 64
+            augment_dim = True
+            time_dependent = True
+            non_linearity = 'relu'
+
+
+
+            model1 = conv_models.ConvODENet('cpu', img_size, num_filters,
+                                   output_dim=output_dim,
+                                   augment_dim=augment_dim,
+                                   time_dependent=time_dependent,
+                                   non_linearity=non_linearity,
+                                   adjoint=True)
+            
+            input = torch.rand(100,3,32,32)
+            output = model1(input)
+            print(output.shape)
+            # print(output.argmax(dim=1))
+
             # Train the model
             trainer = pl.Trainer(max_epochs=2, accelerator="gpu", devices=1)
             trainer.fit(model, train_loader, val_loader)
-            trainer.validate(val_loader)
+            trainer.validate(model, val_loader)
 
-            # Visualize predictions
+            # # Visualize predictions
             visualize_predictions(model, val_loader)
 
 if __name__=='__main__':
