@@ -6,14 +6,11 @@ import torch
 
 
 class UCMERCDNeuralODE(pl.LightningModule):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_filters = 64, augment_dim = True, time_dependent = True, non_linearity = 'relu', num_classes=10):
         super(UCMERCDNeuralODE, self).__init__()
+        
         img_size = (3, 224, 224)
         output_dim = num_classes
-        num_filters = 64
-        augment_dim = True
-        time_dependent = True
-        non_linearity = 'relu'
         device = None
 
         # Define metrics
@@ -45,9 +42,9 @@ class UCMERCDNeuralODE(pl.LightningModule):
         loss = F.cross_entropy(outputs, labels)
         # preds = torch.argmax(outputs, dim=1)
         preds = outputs
-        acc = self.train_accuracy(preds, labels)
+        # acc = self.train_accuracy(preds, labels)
         self.log('train_loss', loss, on_step=True, on_epoch=True)
-        self.log('train_acc', acc, on_step=True, on_epoch=True)
+        # self.log('train_acc', acc, on_step=True, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):

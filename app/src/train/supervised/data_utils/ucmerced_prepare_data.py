@@ -25,10 +25,10 @@ train_transforms = torch.nn.Sequential(
     K.augmentation.Resize(size=224, side="short"),
     K.augmentation.CenterCrop(size=224),
     K.augmentation.RandomHorizontalFlip(p=0.5),
-    K.augmentation.RandomElasticTransform(),
-    K.augmentation.RandomPerspective(p=0.5),
+    # K.augmentation.RandomElasticTransform(),
+    # K.augmentation.RandomPerspective(p=0.5),
     K.augmentation.RandomBoxBlur(p=0.5),
-    K.augmentation.RandomSaltAndPepperNoise(p=0.5),
+    # K.augmentation.RandomSaltAndPepperNoise(p=0.5),
     K.augmentation.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.2023, 0.1994, 0.2010]),
 )
 

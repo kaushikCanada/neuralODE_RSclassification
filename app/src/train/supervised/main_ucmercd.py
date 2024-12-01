@@ -11,7 +11,7 @@ from torchdiffeq import odeint_adjoint as odeint
 
 # CUSTOM MODULES
 from data_utils import ucmerced_prepare_data
-from model_utils import models,conv_models, convnode_task
+from train_utils import convnode_task
 
 
 # pl.seed_everything(42)
@@ -49,11 +49,11 @@ def main():
             # Instantiate the model
             model = convnode_task.UCMERCDNeuralODE(num_classes=21)
 
-            input = torch.rand(100,3,224, 224)
-            output = model(input)
-            print(output.shape)
-            print(output)
-            print(output.argmax(dim=1).shape)
+            # input = torch.rand(100,3,224, 224)
+            # output = model(input)
+            # print(output.shape)
+            # print(output)
+            # print(output.argmax(dim=1).shape)
 
 
             # Train the model
