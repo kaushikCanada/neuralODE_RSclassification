@@ -1,3 +1,4 @@
 torchgeo[all]
 torchdiffeq
 neurodiffeq
+datasets
