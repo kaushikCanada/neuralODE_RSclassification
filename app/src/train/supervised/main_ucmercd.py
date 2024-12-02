@@ -27,7 +27,7 @@ parser.add_argument('--lr', default=0.001, help='Learning Rate')
 parser.add_argument("--data_dir", type=str, help="path to data")
 parser.add_argument('--max_epochs', type=int, default=4,  metavar='N', help='number of data loader workers')
 parser.add_argument('--batch_size', default=32, type=int, metavar='N', help='mini-batch size')
-parser.add_argument('--model_name', default="odenet", type=str, help='model name')
+parser.add_argument('--model_name', default="neuralode", type=str, help='model name')
 parser.add_argument('--num_workers', type=int, default=0, metavar='N', help='number of data loader workers')
 parser.add_argument('--checkpoint_dir', default='./checkpoint/', type=Path, metavar='DIR', help='path to checkpoint directory')
 

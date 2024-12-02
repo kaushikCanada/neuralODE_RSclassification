@@ -7,7 +7,8 @@
 # SBATCH --account=def-sh1352
 # SBATCH --time=0-10:00:00
 # SBATCH --mail-type=BEGIN,FAIL,END
-# SBATCH --output=node%N-%j.out
+# SBATCH --mail-user=kaushik.roy@inrs.ca
+# SBATCH --output=neuralode-%j.out
 
 module load python/3.11 libspatialindex
 
@@ -38,10 +39,10 @@ echo "WORLD_SIZE="$WORLD_SIZE
 #             --data_dir  ${data_dir}
 
 srun python ~/scratch/landcover-ssl/app/src/train/supervised/main.py \
-            --batch_size 16 \
+            --batch_size 64 \
             --lr 0.001 \
-            --max_epochs 200 \
+            --max_epochs 50 \
             --num_workers 10 \
-            --model_name manet \
+            --model_name neuralode \
             --checkpoint_dir ${log_dir} \
             --data_dir  ${data_dir}
