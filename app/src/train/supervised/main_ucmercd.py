@@ -10,8 +10,9 @@ import torch
 from torchdiffeq import odeint_adjoint as odeint
 
 # CUSTOM MODULES
-from data_utils import ucmerced_prepare_data
-from train_utils import convnode_task
+from data_utils.ucmerced_prepare_data import prepare_data
+from data_utils.datamodule_urmerced import UCMercedDataModule
+from train_utils.convnode_task import UCMERCDNeuralODE
 
 
 # pl.seed_everything(42)
@@ -33,45 +34,57 @@ parser.add_argument('--checkpoint_dir', default='./checkpoint/', type=Path, meta
 
 
 def main():
-            print("Starting...")
+   print("Starting...")
 
-            args = parser.parse_args()
-            dict_args = vars(args)
-            # root = dict_args['data_dir'] + "/AZURE/cleaned_gta_labelled_256m/"
-            # batch_size = dict_args['batch_size']
-            # num_workers = dict_args['num_workers']
-            # lr = float(dict_args['lr'])
-            
-
-            # Prepare data
-            train_loader, val_loader, labels = ucmerced_prepare_data.prepare_data()
-
-            # Instantiate the model
-            model = convnode_task.UCMERCDNeuralODE(num_classes=21)
-
-            # input = torch.rand(100,3,224, 224)
-            # output = model(input)
-            # print(output.shape)
-            # print(output)
-            # print(output.argmax(dim=1).shape)
+   args = parser.parse_args()
+   dict_args = vars(args)
+   # root = dict_args['data_dir'] + "/AZURE/cleaned_gta_labelled_256m/"
+   # batch_size = dict_args['batch_size']
+   # num_workers = dict_args['num_workers']
+   # lr = float(dict_args['lr'])
 
 
-            # Train the model
-            logger = CSVLogger(save_dir='logs/', name='convode')
-            trainer = pl.Trainer(max_epochs=10, accelerator="gpu", devices=1, logger = logger)
-            trainer.fit(model, train_loader, val_loader)
+   # Prepare data
+   # train_loader, val_loader, labels = prepare_data()
 
-            # trainer.validate(model, val_loader)
+   data_dir = 'E:\\AITLAS\\UCMerced_LandUse'
+   dm = UCMercedDataModule(data_dir=data_dir, batch_size=32, num_workers=2)
+   dm.setup()
 
-            validate_results = trainer.validate(dataloaders=val_loader)
-            print('RS CLS CONVODE VAL LOSS = ',validate_results[0]['val_loss'])
-            print('RS CLS CONVODE VAL ACC = ',validate_results[0]['val_acc'])
-            print('RS CLS CONVODE VAL PRECISION = ',validate_results[0]['val_precision'])
-            print('RS CLS CONVODE VAL RECALL = ',validate_results[0]['val_recall'])
-            print('RS CLS CONVODE VAL F1 SCORE = ',validate_results[0]['val_f1'])
-            print('RS CLS CONVODE VAL mAP = ',validate_results[0]['val_mAP'])
-            print('RS CLS CONVODE VAL MCC = ',validate_results[0]['val_math_corr_coeff'])
-            print('RS CLS CONVODE VAL KAPPA = ',validate_results[0]['val_cohen_kappa'])
+   # Instantiate the model
+   model = UCMERCDNeuralODE(num_classes=21)
+
+   # input = torch.rand(100,3,224, 224)
+   # output = model(input)
+   # print(output.shape)
+   # print(output)
+   # print(output.argmax(dim=1).shape)
+
+
+   # Train the model
+   logger = CSVLogger(save_dir='logs/', name='convode')
+   trainer = pl.Trainer(max_epochs=2, accelerator="gpu", devices=1, logger = logger, fast_dev_run=False)
+   trainer.fit(model, dm.train_dataloader(), dm.val_dataloader())
+   # trainer.validate(model, dm.val_dataloader())
+   # trainer.test(model, dm.test_dataloader())
+
+   # trainer.validate(model, val_loader)
+
+   print("VALIDATION RESULTS")
+   validate_results = trainer.validate(model, dm.val_dataloader())
+   print('RS CLS CONVODE VAL LOSS = ',validate_results[0]['val_loss'])
+   print('RS CLS CONVODE VAL ACC = ',validate_results[0]['val_acc'])
+   print('RS CLS CONVODE VAL PRECISION = ',validate_results[0]['val_precision'])
+   print('RS CLS CONVODE VAL RECALL = ',validate_results[0]['val_recall'])
+   print('RS CLS CONVODE VAL F1 SCORE = ',validate_results[0]['val_f1'])
+   print('RS CLS CONVODE VAL mAP = ',validate_results[0]['val_mAP'])
+   print('RS CLS CONVODE VAL MCC = ',validate_results[0]['val_math_corr_coeff'])
+   print('RS CLS CONVODE VAL KAPPA = ',validate_results[0]['val_cohen_kappa'])
+
+   print("TEST RESULTS")
+   test_results = trainer.test(model, dm.test_dataloader())
+   print('RS CLS CONVODE TEST LOSS = ',test_results[0]['test_loss'])
+   print('RS CLS CONVODE TEST ACC = ',test_results[0]['test_acc'])
 
 if __name__=='__main__':
    main()

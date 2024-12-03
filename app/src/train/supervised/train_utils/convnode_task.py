@@ -13,7 +13,7 @@ class UCMERCDNeuralODE(pl.LightningModule):
         output_dim = num_classes
         device = None
 
-        # Define metrics
+        # Define validation metrics
         self.train_accuracy = MulticlassAccuracy(num_classes=num_classes, average="macro")
         self.val_accuracy = MulticlassAccuracy(num_classes=num_classes, average="macro")
         self.val_precision = MulticlassPrecision(num_classes=num_classes, average="macro")
@@ -23,8 +23,9 @@ class UCMERCDNeuralODE(pl.LightningModule):
         self.val_math_corr_coeff = MulticlassMatthewsCorrCoef(num_classes=num_classes)
         self.val_cohen_kappa = MulticlassCohenKappa(num_classes=num_classes)
         self.confusion_matrix = MulticlassConfusionMatrix(num_classes=num_classes)
-        
 
+        # Define test metrics
+        self.test_accuracy = MulticlassAccuracy(num_classes=num_classes, average="macro")
 
         self.model = conv_models.ConvODENet(device, img_size, num_filters,
                                 output_dim=output_dim,
@@ -38,6 +39,9 @@ class UCMERCDNeuralODE(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         inputs, labels = batch['image'],batch['label']
+        # print(inputs.shape)
+        # print(labels.shape)
+
         outputs = self(inputs)
         loss = F.cross_entropy(outputs, labels)
         # preds = torch.argmax(outputs, dim=1)
@@ -77,6 +81,23 @@ class UCMERCDNeuralODE(pl.LightningModule):
         return {'val_loss': loss, 'val_acc': acc, 'val_precision': precision, 
                 'val_recall': recall, 'val_f1': f1, 'val_mAP': mAP, 
                 'val_math_corr_coeff': math_corr_coeff, 'val_cohen_kappa': cohen_kappa, 'confusion_matrix': cm}
+
+    def test_step(self, batch, batch_idx):
+        inputs, labels = batch['image'],batch['label']
+        outputs = self(inputs)
+        loss = F.cross_entropy(outputs, labels)
+        # print(labels.shape,labels)
+        # preds = torch.argmax(outputs,dim=1)
+        preds=outputs
+        # print(preds.shape,preds)
+        acc = self.test_accuracy(preds, labels)
+
+        # Log metrics
+        self.log('test_loss', loss, on_step=False, on_epoch=True)
+        self.log('test_acc', acc, on_step=False, on_epoch=True)
+
+        return {'test_loss': loss, 'test_acc': acc
+               }
 
     # def on_validation_epoch_end(self):
     #     # Log confusion matrix at the end of each epoch
